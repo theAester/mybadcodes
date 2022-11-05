@@ -47,6 +47,11 @@ struct passed_data{
 static void timer_end(int sig, siginfo_t* si, void* uc){
 	timer_t timerid = *(((struct passed_data*)si->si_value.sival_ptr)->timerptr);
 	long long int instcnt = *(((struct passed_data*)si->si_value.sival_ptr)->instptr);
+	const struct itimerspec ps={
+		.it_interval = { .tv_sec = 0, .tv_nsec = 0},
+		.it_value = { .tv_sec = 0, .tv_nsec = 0}
+	};
+	timer_settime(timerid, 0, &ps, NULL); // disarm timer
 	setlocale(LC_NUMERIC, "");
 	printf("Results: ran %'lld simple arithmetic instructions in 1 second\n", instcnt);
 	exit(0);
@@ -106,18 +111,20 @@ int main(int argc, char* argv[]){
 		};
 		if(timer_create((method == MREALTIME ? CLOCK_REALTIME : CLOCK_PROCESS_CPUTIME_ID), 
 				  &se, &timerid) == -1){
-		exit(1);
+			fprintf(stderr, "Unexpected error: cannot create timer.\n");
+			exit(1);
 		}
 		struct sigaction sa={
 			.sa_flags = SA_SIGINFO,
 			.sa_sigaction = timer_end
 		};
 		if(sigaction(SIGALRM, &sa, NULL) == -1){
-		exit(3);
+			fprintf(stderr, "Unexpected error: cannot bind signal action to signal number %d\n", SIGALRM);
+			exit(3);
 		}
 		if( timer_settime(timerid, 0, &ps, NULL) == -1){
-			fprintf(stderr, "bruh\n");
-		exit(1);
+			fprintf(stderr, "Unexpected error: cannot start timer.\n");
+			exit(1);
 		}
 		while(1){
 			accum += 7;
