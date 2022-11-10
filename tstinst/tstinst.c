@@ -14,10 +14,12 @@ int calc_count(const char* str,long long int* out){
 	if(out == NULL) return -1; 
 	errno =0;
 	char* endstr;
-	int temp = strtoll(str, &endstr, 0);
+	long long int temp = strtoll(str, &endstr, 0);
 	if(errno == 0 && *endstr == '\0'){
 		*out = temp;
 		return 0;
+	}else if(errno == 0 && *endstr != '\0'){
+		return -2;
 	}
 	return errno;
 }
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]){
 			break;
 			case 'n':
 				if(calc_count(optarg, &countlim) != 0){
-					fprintf(stderr, "Error. %s is not a numeric value.\n See -h.\n", optarg);
+					fprintf(stderr, "Error. %s is not an entirely numeric value.\n See -h.\n", optarg);
 					exit(1);
 				}	
 				method = MCOUNT;
